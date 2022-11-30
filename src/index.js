@@ -1,4 +1,4 @@
-import { getImg } from './js/fetch-img';
+import { fetchPictures } from './js/fetch-img';
 import Notiflix from 'notiflix';
 import { fetchPictures } from './js/fetch-img';
 
@@ -10,6 +10,10 @@ const refs = {
 };
 
 refs.form.addEventListener('submit', onRenderImg);
+refs.loadMoreBtn.addEventListener('click', onLoadMore);
+
+refs.loadMoreBtn.style = 'display: none;';
+let pageNumber = 1;
 
 async function onRenderImg(e) {
   e.preventDefault();
@@ -27,32 +31,20 @@ async function onRenderImg(e) {
         );
       }
       renderCardImg(img);
+      refs.loadMoreBtn.style = 'display: block;';
     }
   } catch (error) {}
 }
 
-function omLoadMore() {
+async function onLoadMore() {
   pageNumber++;
   const inputValue = refs.formInput.value.trim();
-
-  getImg(inputValue, pageNumber)
-    .then(img => {
-      renderCardImg(img);
-      refs.loadMoreBtn.style = `display: block;`;
-    })
-
-    .catch(img => {
-      if (img.hits === []) {
-        Notiflix.Notify.failure(
-          'Sorry, there are no images matching your search query. Please try again.',
-          { timeout: 1000 }
-        );
-      }
-    });
+  const img = await fetchPictures(inputValue, pageNumber);
+  renderCardImg(img);
 }
 
 function renderCardImg(img) {
-  const markupCards = img.hits
+  const markupCard = img.hits
     .map(
       ({
         webformatURL,
@@ -81,10 +73,11 @@ function renderCardImg(img) {
 </div>`
     )
     .join('');
-  return refs.imgCard.insertAdjacentHTML('beforeend', markupCards);
+  return refs.imgCard.insertAdjacentHTML('beforeend', markupCard);
 }
 
 function cleanerImg() {
   refs.imgCard.innerHTML = '';
   pageNumber = 1;
+  refs.loadMoreBtn.style = 'display: none;';
 }
