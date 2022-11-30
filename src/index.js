@@ -52,7 +52,7 @@ function omLoadMore() {
 }
 
 function renderCardImg(img) {
-  const markupCard = img.hits
+  const markupCards = img.hits
     .map(
       ({
         webformatURL,
@@ -81,7 +81,7 @@ function renderCardImg(img) {
 </div>`
     )
     .join('');
-  return refs.imgCard.insertAdjacentHTML('beforeend', markupCard);
+  return refs.imgCard.insertAdjacentHTML('beforeend', markupCards);
 }
 
 function cleanerImg() {
