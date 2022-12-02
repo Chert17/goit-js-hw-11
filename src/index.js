@@ -1,6 +1,7 @@
 import { fetchPictures } from './js/fetch-img';
 import Notiflix from 'notiflix';
-import { fetchPictures } from './js/fetch-img';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 
 const refs = {
   form: document.querySelector('#search-form'),
@@ -15,32 +16,52 @@ refs.loadMoreBtn.addEventListener('click', onLoadMore);
 refs.loadMoreBtn.style = 'display: none;';
 let pageNumber = 1;
 
+const lightbox = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionDelay: 250,
+});
+
 async function onRenderImg(e) {
   e.preventDefault();
   cleanerImg();
 
-  try {
-    const inputValue = refs.formInput.value.trim();
+  const inputValue = refs.formInput.value.trim();
 
-    if (inputValue !== '') {
-      const img = await fetchPictures(inputValue, pageNumber);
-      if (!img.hits.length) {
-        return Notiflix.Notify.failure(
-          'Sorry, there are no images matching your search query. Please try again.',
-          { timeout: 1000 }
-        );
-      }
-      renderCardImg(img);
-      refs.loadMoreBtn.style = 'display: block;';
+  if (inputValue !== '') {
+    const img = await fetchPictures(inputValue, pageNumber);
+    if (!img.hits.length) {
+      Notiflix.Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.',
+        { timeout: 1000 }
+      );
+      return;
     }
-  } catch (error) {}
+    renderCardImg(img);
+
+    lightbox.refresh();
+
+    refs.loadMoreBtn.style = 'display: block;';
+    Notiflix.Notify.success(`Hooray! We found ${img.totalHits} images.`, {
+      timeout: 1000,
+    });
+  }
 }
 
 async function onLoadMore() {
-  pageNumber++;
+  pageNumber += 1;
   const inputValue = refs.formInput.value.trim();
   const img = await fetchPictures(inputValue, pageNumber);
+  if (!img.hits.length) {
+    refs.loadMoreBtn.style = 'display: none;';
+    Notiflix.Notify.info(
+      `We're sorry, but you've reached the end of search results.`,
+      { timeout: 1000 }
+    );
+    return;
+  }
   renderCardImg(img);
+
+  lightbox.refresh();
 }
 
 function renderCardImg(img) {
@@ -55,7 +76,7 @@ function renderCardImg(img) {
         comments,
         downloads,
       }) => `<div class="photo-card">
-  <img src="${webformatURL}" alt="${tags}" loading="lazy"  />
+<a class="info-link" href="${largeImageURL}"><img src="${webformatURL}" alt="${tags}" loading="lazy"  />
   <div class="info">
     <p class="info-item">
       <b>Likes ${likes}</b>
@@ -69,7 +90,7 @@ function renderCardImg(img) {
     <p class="info-item">
       <b>Downloads ${downloads}</b>
     </p>
-  </div>
+  </div></a>
 </div>`
     )
     .join('');
